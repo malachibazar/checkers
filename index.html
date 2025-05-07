@@ -1,0 +1,1351 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Checkers</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        font-family: "Press Start 2P", cursive;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        margin: 0;
+        background-color: #2c3e50; /* Dark blue background */
+        color: #ecf0f1; /* Light text color */
+        padding: 20px 0;
+      }
+
+      .game-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .options-area {
+        display: flex;
+        flex-direction: column; /* Stack options vertically */
+        align-items: center; /* Center items within the options area */
+        margin-bottom: 20px;
+        background-color: #34495e;
+        padding: 15px; /* Increased padding */
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      }
+
+      .options-container {
+        display: flex;
+        align-items: center;
+        margin-bottom: 10px; /* Space between AI toggle and difficulty */
+      }
+      .options-container:last-child {
+        margin-bottom: 0;
+      }
+
+      .options-container label {
+        margin-left: 8px;
+        font-size: 0.9em;
+      }
+      .options-container input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+      }
+      .options-container select {
+        font-family: "Press Start 2P", cursive;
+        background-color: #ecf0f1;
+        color: #2c3e50;
+        border: 2px solid #7f8c8d;
+        border-radius: 5px;
+        padding: 5px 8px;
+        font-size: 0.8em;
+        margin-left: 10px;
+        cursor: pointer;
+      }
+
+      #message-bar {
+        background-color: #34495e;
+        color: #ecf0f1;
+        padding: 15px 25px;
+        border-radius: 10px;
+        margin-bottom: 25px;
+        font-size: 1.2em;
+        text-align: center;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        border: 2px solid #7f8c8d;
+        min-height: 1.5em; /* To prevent layout shift */
+      }
+
+      #board {
+        display: grid;
+        grid-template-columns: repeat(8, 60px);
+        grid-template-rows: repeat(8, 60px);
+        border: 5px solid #7f8c8d; /* Grey border */
+        border-radius: 10px;
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+        overflow: hidden;
+      }
+
+      .square {
+        width: 60px;
+        height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 30px;
+        box-sizing: border-box;
+      }
+
+      .light {
+        background-color: #ecf0f1;
+      }
+
+      .dark {
+        background-color: #95a5a6;
+      }
+
+      .piece {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: inset 0 -3px 5px rgba(0, 0, 0, 0.3),
+          0 2px 3px rgba(0, 0, 0, 0.2);
+        transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+      }
+
+      .piece.red {
+        background-color: #e74c3c;
+        border: 3px solid #c0392b;
+      }
+
+      .piece.black {
+        background-color: #34495e;
+        border: 3px solid #2c3e50;
+      }
+
+      .piece.king::after {
+        content: "👑";
+        font-size: 24px;
+        color: #f1c40f;
+        text-shadow: 0 0 3px black;
+      }
+
+      .selected {
+        transform: scale(1.1);
+        box-shadow: 0 0 15px 5px #f1c40f, inset 0 -3px 5px rgba(0, 0, 0, 0.3);
+      }
+
+      .valid-move {
+        background-color: rgba(46, 204, 113, 0.5);
+        border-radius: 50%;
+      }
+
+      .button-container {
+        margin-top: 25px;
+      }
+
+      button#reset-button {
+        background-color: #e74c3c;
+        color: white;
+        border: none;
+        padding: 12px 25px;
+        font-family: "Press Start 2P", cursive;
+        font-size: 1em;
+        border-radius: 8px;
+        cursor: pointer;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+        transition: background-color 0.2s, transform 0.1s;
+        border-bottom: 3px solid #c0392b;
+      }
+
+      button#reset-button:hover {
+        background-color: #c0392b;
+      }
+
+      button#reset-button:active {
+        transform: translateY(2px);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      }
+
+      @media (max-width: 600px) {
+        #board {
+          grid-template-columns: repeat(8, 45px);
+          grid-template-rows: repeat(8, 45px);
+          border-width: 3px;
+        }
+        .square {
+          width: 45px;
+          height: 45px;
+        }
+        .piece {
+          width: 36px;
+          height: 36px;
+          border-width: 2px;
+        }
+        .piece.king::after {
+          font-size: 18px;
+        }
+        #message-bar {
+          font-size: 1em;
+          padding: 10px 15px;
+        }
+        .options-container label {
+          font-size: 0.8em;
+        }
+        .options-container input[type="checkbox"] {
+          width: 16px;
+          height: 16px;
+        }
+        .options-container select {
+          font-size: 0.7em;
+          padding: 4px 6px;
+        }
+        button#reset-button {
+          padding: 10px 20px;
+          font-size: 0.9em;
+        }
+      }
+
+      @media (max-width: 420px) {
+        #board {
+          grid-template-columns: repeat(8, 40px);
+          grid-template-rows: repeat(8, 40px);
+        }
+        .square {
+          width: 40px;
+          height: 40px;
+        }
+        .piece {
+          width: 32px;
+          height: 32px;
+        }
+        .piece.king::after {
+          font-size: 16px;
+        }
+        #message-bar {
+          font-size: 0.9em;
+        }
+        .options-container label {
+          font-size: 0.7em;
+        }
+        .options-container select {
+          font-size: 0.6em;
+          padding: 3px 5px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="game-container">
+      <div class="options-area">
+        <div class="options-container">
+          <input type="checkbox" id="aiToggle" name="aiToggle" />
+          <label for="aiToggle">Play against AI (AI is Black)</label>
+        </div>
+        <div class="options-container">
+          <label for="aiDifficulty">AI Difficulty:</label>
+          <select id="aiDifficulty" name="aiDifficulty">
+            <option value="1">Easy</option>
+            <option value="2">Medium</option>
+            <option value="3" selected>Hard</option>
+            <option value="4">Brutal</option>
+          </select>
+        </div>
+      </div>
+      <div id="message-bar">Red's Turn</div>
+      <div id="board"></div>
+      <div class="button-container">
+        <button id="reset-button">Reset Game</button>
+      </div>
+    </div>
+
+    <script>
+      // Game state variables
+      const boardElement = document.getElementById("board");
+      const messageBar = document.getElementById("message-bar");
+      const resetButton = document.getElementById("reset-button");
+      const aiToggle = document.getElementById("aiToggle");
+      const aiDifficultySelect = document.getElementById("aiDifficulty");
+
+      const ROWS = 8;
+      const COLS = 8;
+      let boardState = [];
+      let currentPlayer = "red";
+      let selectedPiece = null;
+      let redPiecesCount = 12;
+      let blackPiecesCount = 12;
+      let mustJump = false; // For the *current* player in the *actual* game
+      let playWithAI = false;
+      const AI_PLAYER = "black";
+      const HUMAN_PLAYER = "red";
+      let currentAIDepth = 3; // Default AI depth (Hard)
+
+      // --- Game Initialization ---
+      function initializeBoard() {
+        boardElement.innerHTML = "";
+        boardElement.style.pointerEvents = "auto";
+        boardState = [];
+        currentPlayer = HUMAN_PLAYER;
+        selectedPiece = null;
+        mustJump = false;
+        redPiecesCount = 12;
+        blackPiecesCount = 12;
+        playWithAI = aiToggle.checked;
+        currentAIDepth = parseInt(aiDifficultySelect.value); // Set AI depth from selection
+
+        for (let row = 0; row < ROWS; row++) {
+          boardState[row] = [];
+          for (let col = 0; col < COLS; col++) {
+            const square = document.createElement("div");
+            square.classList.add("square");
+            square.classList.add((row + col) % 2 === 0 ? "light" : "dark");
+            square.dataset.row = row;
+            square.dataset.col = col;
+
+            let piece = null;
+            if ((row + col) % 2 !== 0) {
+              if (row < 3) {
+                piece = createPiece("black", row, col);
+                boardState[row][col] = {
+                  player: "black",
+                  isKing: false,
+                  element: piece,
+                };
+              } else if (row > 4) {
+                piece = createPiece("red", row, col);
+                boardState[row][col] = {
+                  player: "red",
+                  isKing: false,
+                  element: piece,
+                };
+              } else {
+                boardState[row][col] = null;
+              }
+            } else {
+              boardState[row][col] = null;
+            }
+
+            if (piece) {
+              square.appendChild(piece);
+            }
+            square.addEventListener("click", () => onSquareClick(row, col));
+            boardElement.appendChild(square);
+          }
+        }
+        mustJump = checkMandatoryJumpsForPlayer(
+          boardState,
+          HUMAN_PLAYER,
+          redPiecesCount,
+          blackPiecesCount
+        ).isMandatory;
+        updateTurnMessage();
+      }
+
+      function createPiece(player, row, col) {
+        const piece = document.createElement("div");
+        piece.classList.add("piece", player);
+        piece.dataset.player = player;
+        piece.dataset.row = row;
+        piece.dataset.col = col;
+
+        piece.clickHandler = (event) => {
+          event.stopPropagation();
+          onPieceClick(
+            piece,
+            parseInt(piece.dataset.row),
+            parseInt(piece.dataset.col)
+          );
+        };
+        piece.addEventListener("click", piece.clickHandler);
+        return piece;
+      }
+
+      // --- Event Handlers ---
+      function onPieceClick(pieceElement, row, col) {
+        if (playWithAI && currentPlayer === AI_PLAYER) return;
+
+        const pieceData = boardState[row][col];
+        if (pieceData && pieceData.player === currentPlayer) {
+          if (mustJump) {
+            const { moves } = getPossibleMovesForPiece(
+              boardState,
+              row,
+              col,
+              pieceData.isKing,
+              pieceData.player,
+              true
+            );
+            if (moves.some((m) => m.type === "jump")) {
+              selectPiece(pieceElement, row, col, pieceData.isKing);
+            } else {
+              updateMessage(
+                `Mandatory Jump! ${capitalize(
+                  currentPlayer
+                )} must jump with another piece.`
+              );
+            }
+          } else {
+            selectPiece(pieceElement, row, col, pieceData.isKing);
+          }
+        }
+      }
+
+      function onSquareClick(row, col) {
+        if (playWithAI && currentPlayer === AI_PLAYER) return;
+
+        if (selectedPiece) {
+          const { pieceElement, prevRow, prevCol, isKing } = selectedPiece;
+          const { moves: possibleMoves } = getPossibleMovesForPiece(
+            boardState,
+            prevRow,
+            prevCol,
+            isKing,
+            currentPlayer,
+            mustJump
+          );
+          const targetMove = possibleMoves.find(
+            (move) => move.row === row && move.col === col
+          );
+
+          if (targetMove) {
+            const isJump = targetMove.type === "jump";
+
+            if (mustJump && !isJump) {
+              updateMessage(
+                `Mandatory Jump! ${capitalize(currentPlayer)} must jump.`
+              );
+              return;
+            }
+
+            executeMove(
+              pieceElement,
+              prevRow,
+              prevCol,
+              row,
+              col,
+              isJump,
+              targetMove.jumpedRow,
+              targetMove.jumpedCol
+            );
+
+            if (isJump) {
+              const pieceAfterJump = boardState[row][col];
+              const { moves: furtherJumps } = getPossibleMovesForPiece(
+                boardState,
+                row,
+                col,
+                pieceAfterJump.isKing,
+                currentPlayer,
+                true
+              );
+
+              if (furtherJumps.some((m) => m.type === "jump")) {
+                selectPiece(
+                  pieceAfterJump.element,
+                  row,
+                  col,
+                  pieceAfterJump.isKing
+                );
+                mustJump = true;
+                updateTurnMessage();
+                highlightValidMoves(row, col, pieceAfterJump.isKing);
+                return;
+              }
+            }
+            endTurnSequence();
+          } else {
+            const clickedSquareContent = boardState[row][col];
+            if (
+              clickedSquareContent &&
+              clickedSquareContent.player === currentPlayer
+            ) {
+              onPieceClick(clickedSquareContent.element, row, col);
+            } else {
+              deselectPiece();
+            }
+          }
+        } else {
+          const pieceData = boardState[row][col];
+          if (pieceData && pieceData.player === currentPlayer) {
+            onPieceClick(pieceData.element, row, col);
+          }
+        }
+      }
+
+      // --- Core Move Execution ---
+      function executeMove(
+        pieceElement,
+        fromRow,
+        fromCol,
+        toRow,
+        toCol,
+        isJump,
+        jumpedR,
+        jumpedC,
+        isSimulation = false
+      ) {
+        const currentBoard = isSimulation ? arguments[8] : boardState; // Get board from args if simulation
+        let currentRedCount = isSimulation ? arguments[9] : redPiecesCount;
+        let currentBlackCount = isSimulation ? arguments[10] : blackPiecesCount;
+
+        const pieceData = currentBoard[fromRow][fromCol];
+        currentBoard[toRow][toCol] = { ...pieceData }; // Copy piece data
+        currentBoard[fromRow][fromCol] = null;
+
+        if (!isSimulation) {
+          pieceElement.dataset.row = toRow;
+          pieceElement.dataset.col = toCol;
+          const targetSquare = getSquareElement(toRow, toCol);
+          targetSquare.appendChild(pieceElement);
+        }
+
+        if (isJump) {
+          const jumpedPieceData = currentBoard[jumpedR][jumpedC]; // Already on the potentially copied board
+          if (jumpedPieceData) {
+            if (!isSimulation && jumpedPieceData.element) {
+              // Check if element exists (it might not in simulation)
+              jumpedPieceData.element.remove();
+            }
+            if (jumpedPieceData.player === HUMAN_PLAYER) currentRedCount--;
+            else currentBlackCount--;
+            currentBoard[jumpedR][jumpedC] = null;
+          }
+        }
+        checkForKing(currentBoard, toRow, toCol, isSimulation);
+
+        if (!isSimulation) {
+          redPiecesCount = currentRedCount;
+          blackPiecesCount = currentBlackCount;
+        }
+        return {
+          board: currentBoard,
+          rCount: currentRedCount,
+          bCount: currentBlackCount,
+        };
+      }
+
+      // --- Piece Selection and Movement ---
+      function selectPiece(pieceElement, row, col, isKing) {
+        deselectPiece();
+        selectedPiece = { pieceElement, prevRow: row, prevCol: col, isKing };
+        pieceElement.classList.add("selected");
+        highlightValidMoves(row, col, isKing);
+      }
+
+      function deselectPiece() {
+        if (selectedPiece) {
+          selectedPiece.pieceElement.classList.remove("selected");
+        }
+        selectedPiece = null;
+        clearValidMoveHighlights();
+      }
+
+      // --- Game Logic & AI Helpers ---
+
+      function highlightValidMoves(row, col, isKing) {
+        clearValidMoveHighlights();
+        const { moves: possibleMoves } = getPossibleMovesForPiece(
+          boardState,
+          row,
+          col,
+          isKing,
+          currentPlayer,
+          mustJump
+        );
+
+        possibleMoves.forEach((move) => {
+          const square = getSquareElement(move.row, move.col);
+          if (square) square.classList.add("valid-move");
+        });
+      }
+
+      function clearValidMoveHighlights() {
+        document
+          .querySelectorAll(".valid-move")
+          .forEach((sq) => sq.classList.remove("valid-move"));
+      }
+
+      function isValidSquare(r, c) {
+        return r >= 0 && r < ROWS && c >= 0 && c < COLS;
+      }
+
+      function checkForKing(currentBoard, row, col, isSimulation = false) {
+        const pieceData = currentBoard[row][col];
+        if (!pieceData || pieceData.isKing) return false;
+
+        if (
+          (pieceData.player === HUMAN_PLAYER && row === 0) ||
+          (pieceData.player === AI_PLAYER && row === ROWS - 1)
+        ) {
+          pieceData.isKing = true; // Modify the pieceData object directly (on the copy if simulation)
+          if (!isSimulation && pieceData.element) {
+            pieceData.element.classList.add("king");
+          }
+          return true;
+        }
+        return false;
+      }
+
+      function endTurnSequence() {
+        deselectPiece();
+        currentPlayer =
+          currentPlayer === HUMAN_PLAYER ? AI_PLAYER : HUMAN_PLAYER;
+
+        const { isMandatory, hasAnyMoves } = checkMandatoryJumpsForPlayer(
+          boardState,
+          currentPlayer,
+          redPiecesCount,
+          blackPiecesCount
+        );
+        mustJump = isMandatory;
+
+        updateTurnMessage();
+
+        if (!hasAnyMoves || redPiecesCount === 0 || blackPiecesCount === 0) {
+          determineWinner();
+          return;
+        }
+
+        if (playWithAI && currentPlayer === AI_PLAYER) {
+          boardElement.style.pointerEvents = "none";
+          setTimeout(() => {
+            aiOrchestrateMove();
+            if (
+              currentPlayer === HUMAN_PLAYER ||
+              redPiecesCount === 0 ||
+              blackPiecesCount === 0
+            ) {
+              boardElement.style.pointerEvents = "auto";
+            }
+          }, 500);
+        } else {
+          boardElement.style.pointerEvents = "auto";
+        }
+      }
+
+      function updateTurnMessage() {
+        let message = `${capitalize(currentPlayer)}'s Turn`;
+        if (playWithAI && currentPlayer === AI_PLAYER) {
+          message = `${capitalize(AI_PLAYER)} (AI) is thinking...`;
+        }
+        if (selectedPiece && mustJump && currentPlayer !== AI_PLAYER) {
+          const pieceData =
+            boardState[selectedPiece.prevRow][selectedPiece.prevCol];
+          if (pieceData && pieceData.player === currentPlayer) {
+            const { moves } = getPossibleMovesForPiece(
+              boardState,
+              selectedPiece.prevRow,
+              selectedPiece.prevCol,
+              pieceData.isKing,
+              currentPlayer,
+              true
+            );
+            if (moves.some((m) => m.type === "jump")) {
+              message = `${capitalize(currentPlayer)} can jump again!`;
+            }
+          }
+        } else if (mustJump) {
+          message = `Mandatory Jump! ${capitalize(currentPlayer)} must jump.`;
+        }
+        messageBar.textContent = message;
+      }
+
+      function determineWinner() {
+        boardElement.style.pointerEvents = "auto";
+        if (redPiecesCount === 0) {
+          updateMessage(
+            `${capitalize(AI_PLAYER)} (AI) Wins! (All red pieces captured)`,
+            true
+          );
+          return;
+        }
+        if (blackPiecesCount === 0) {
+          updateMessage(
+            `${capitalize(HUMAN_PLAYER)} Wins! (All black pieces captured)`,
+            true
+          );
+          return;
+        }
+
+        const { hasAnyMoves } = checkMandatoryJumpsForPlayer(
+          boardState,
+          currentPlayer,
+          redPiecesCount,
+          blackPiecesCount
+        );
+        if (!hasAnyMoves) {
+          const winner =
+            currentPlayer === HUMAN_PLAYER ? AI_PLAYER : HUMAN_PLAYER;
+          const aiTextWinner =
+            playWithAI && winner === AI_PLAYER ? " (AI)" : "";
+          const currentText =
+            playWithAI && currentPlayer === AI_PLAYER ? " (AI)" : "";
+          updateMessage(
+            `${capitalize(
+              winner
+            )}${aiTextWinner} Wins! (No moves left for ${capitalize(
+              currentPlayer
+            )}${currentText})`,
+            true
+          );
+        }
+      }
+
+      // --- AI SPECIFIC LOGIC ---
+
+      function deepCopyBoard(originalBoard) {
+        return originalBoard.map((row) =>
+          row.map((cell) => {
+            if (!cell) return null;
+            // Create a new object for the cell, ensuring 'element' is not copied.
+            const { element, ...restOfCell } = cell;
+            return { ...restOfCell };
+          })
+        );
+      }
+
+      function getPossibleMovesForPiece(
+        currentBoard,
+        r,
+        c,
+        isKing,
+        player,
+        jumpsOnlyPreference
+      ) {
+        const moves = [];
+        const direction = player === HUMAN_PLAYER ? -1 : 1;
+        const opponent = player === HUMAN_PLAYER ? AI_PLAYER : HUMAN_PLAYER;
+
+        const moveOffsets = [
+          { dr: direction, dc: -1 },
+          { dr: direction, dc: 1 },
+        ];
+        if (isKing) {
+          moveOffsets.push(
+            { dr: -direction, dc: -1 },
+            { dr: -direction, dc: 1 }
+          );
+        }
+
+        let canJumpThisPiece = false;
+        for (const offset of moveOffsets) {
+          const nextR = r + offset.dr;
+          const nextC = c + offset.dc;
+          if (
+            isValidSquare(nextR, nextC) &&
+            currentBoard[nextR][nextC] &&
+            currentBoard[nextR][nextC].player === opponent
+          ) {
+            const jumpR = r + offset.dr * 2;
+            const jumpC = c + offset.dc * 2;
+            if (
+              isValidSquare(jumpR, jumpC) &&
+              currentBoard[jumpR][jumpC] === null
+            ) {
+              moves.push({
+                fromRow: r,
+                fromCol: c,
+                row: jumpR,
+                col: jumpC,
+                type: "jump",
+                jumpedRow: nextR,
+                jumpedCol: nextC,
+                pieceIsKing: isKing,
+              });
+              canJumpThisPiece = true;
+            }
+          }
+        }
+
+        if (jumpsOnlyPreference && canJumpThisPiece) {
+          return {
+            moves: moves.filter((m) => m.type === "jump"),
+            canJump: canJumpThisPiece,
+          };
+        }
+        if (!jumpsOnlyPreference) {
+          for (const offset of moveOffsets) {
+            const nextR = r + offset.dr;
+            const nextC = c + offset.dc;
+            if (
+              isValidSquare(nextR, nextC) &&
+              currentBoard[nextR][nextC] === null
+            ) {
+              moves.push({
+                fromRow: r,
+                fromCol: c,
+                row: nextR,
+                col: nextC,
+                type: "move",
+                pieceIsKing: isKing,
+              });
+            }
+          }
+        }
+        // Ensure that if jumpsOnlyPreference is true, only jumps are returned, or an empty array if no jumps.
+        if (jumpsOnlyPreference && !canJumpThisPiece) {
+          return { moves: [], canJump: false };
+        }
+        return { moves, canJump: canJumpThisPiece };
+      }
+
+      function generateAllMovesForPlayer(
+        currentBoard,
+        player,
+        rPieces,
+        bPieces,
+        isPlayerForcedToJump
+      ) {
+        const allMoves = [];
+        for (let r = 0; r < ROWS; r++) {
+          for (let c = 0; c < COLS; c++) {
+            const piece = currentBoard[r][c];
+            if (piece && piece.player === player) {
+              const { moves: pieceMoves } = getPossibleMovesForPiece(
+                currentBoard,
+                r,
+                c,
+                piece.isKing,
+                player,
+                isPlayerForcedToJump
+              );
+              allMoves.push(...pieceMoves);
+            }
+          }
+        }
+        // If forced to jump, ensure only jumps are returned.
+        // getPossibleMovesForPiece with jumpsOnlyPreference=true should handle this,
+        // but this is an additional filter for generateAllMovesForPlayer.
+        if (isPlayerForcedToJump) {
+          return allMoves.filter((m) => m.type === "jump");
+        }
+        return allMoves;
+      }
+
+      function checkMandatoryJumpsForPlayer(
+        currentBoard,
+        player,
+        rCount,
+        bCount
+      ) {
+        if (
+          (player === HUMAN_PLAYER && rCount === 0) ||
+          (player === AI_PLAYER && bCount === 0)
+        ) {
+          return { isMandatory: false, hasAnyMoves: false };
+        }
+
+        let isMandatory = false;
+        let hasAnyRegularMove = false;
+
+        for (let r = 0; r < ROWS; r++) {
+          for (let c = 0; c < COLS; c++) {
+            const piece = currentBoard[r][c];
+            if (piece && piece.player === player) {
+              const { moves: jumpMoves } = getPossibleMovesForPiece(
+                currentBoard,
+                r,
+                c,
+                piece.isKing,
+                player,
+                true
+              );
+              if (jumpMoves.some((m) => m.type === "jump")) {
+                isMandatory = true;
+              }
+              const { moves: allPieceMoves } = getPossibleMovesForPiece(
+                currentBoard,
+                r,
+                c,
+                piece.isKing,
+                player,
+                false
+              );
+              if (allPieceMoves.length > 0) {
+                hasAnyRegularMove = true;
+              }
+            }
+          }
+        }
+        return { isMandatory, hasAnyMoves: isMandatory || hasAnyRegularMove };
+      }
+
+      function evaluateBoard(currentBoard, rPCount, bPCount) {
+        let score = 0;
+        const KING_VALUE = 3;
+        const PIECE_VALUE = 1;
+
+        if (rPCount === 0) return Infinity;
+        if (bPCount === 0) return -Infinity;
+
+        for (let r = 0; r < ROWS; r++) {
+          for (let c = 0; c < COLS; c++) {
+            const piece = currentBoard[r][c];
+            if (piece) {
+              if (piece.player === AI_PLAYER) {
+                score += piece.isKing ? KING_VALUE : PIECE_VALUE;
+                if (!piece.isKing) score += r * 0.1;
+              } else {
+                score -= piece.isKing ? KING_VALUE : PIECE_VALUE;
+                if (!piece.isKing) score -= (ROWS - 1 - r) * 0.1;
+              }
+            }
+          }
+        }
+        score += (bPCount - rPCount) * 2;
+        return score;
+      }
+
+      function simulateMoveOnBoard(board, move, pRedCount, pBlackCount) {
+        const newBoard = deepCopyBoard(board);
+        let newRedCount = pRedCount;
+        let newBlackCount = pBlackCount;
+
+        const pieceToMove = newBoard[move.fromRow][move.fromCol];
+        if (!pieceToMove) {
+          // Should not happen if move is valid
+          console.error("Simulate move: No piece at from location", move);
+          return {
+            board: newBoard,
+            rCount: newRedCount,
+            bCount: newBlackCount,
+            pieceAtTo: null,
+          };
+        }
+
+        newBoard[move.row][move.col] = {
+          player: pieceToMove.player,
+          isKing: pieceToMove.isKing,
+        }; // Use existing king status
+        newBoard[move.fromRow][move.fromCol] = null;
+
+        if (move.type === "jump") {
+          const jumpedPieceOriginal = board[move.jumpedRow][move.jumpedCol]; // Check original board for jumped piece player
+          if (jumpedPieceOriginal) {
+            // Ensure there was a piece to jump
+            if (jumpedPieceOriginal.player === HUMAN_PLAYER) newRedCount--;
+            else newBlackCount--;
+          }
+          newBoard[move.jumpedRow][move.jumpedCol] = null;
+        }
+        checkForKing(newBoard, move.row, move.col, true); // Update king status on newBoard
+
+        return {
+          board: newBoard,
+          rCount: newRedCount,
+          bCount: newBlackCount,
+          pieceAtTo: newBoard[move.row][move.col],
+        };
+      }
+
+      function minimax(
+        simBoard,
+        depth,
+        alpha,
+        beta,
+        isMaximizingPlayer,
+        simRedCount,
+        simBlackCount,
+        initialMoveForMultiJump = null
+      ) {
+        const playerForMinimax = isMaximizingPlayer ? AI_PLAYER : HUMAN_PLAYER;
+        const { isMandatory: playerMustJumpCurrent, hasAnyMoves } =
+          checkMandatoryJumpsForPlayer(
+            simBoard,
+            playerForMinimax,
+            simRedCount,
+            simBlackCount
+          );
+
+        if (
+          depth === 0 ||
+          !hasAnyMoves ||
+          simRedCount === 0 ||
+          simBlackCount === 0
+        ) {
+          return evaluateBoard(simBoard, simRedCount, simBlackCount);
+        }
+
+        let possibleMoves;
+        if (
+          initialMoveForMultiJump &&
+          initialMoveForMultiJump.type === "jump"
+        ) {
+          // If in a multi-jump sequence, only consider jumps from the piece that just jumped.
+          const pieceAfterJump =
+            simBoard[initialMoveForMultiJump.row][initialMoveForMultiJump.col];
+          if (pieceAfterJump && pieceAfterJump.player === playerForMinimax) {
+            const { moves: multiJumps } = getPossibleMovesForPiece(
+              simBoard,
+              initialMoveForMultiJump.row,
+              initialMoveForMultiJump.col,
+              pieceAfterJump.isKing,
+              playerForMinimax,
+              true
+            );
+            possibleMoves = multiJumps.filter((m) => m.type === "jump");
+            if (possibleMoves.length > 0) {
+              // Continue multi-jump
+              // The turn doesn't switch, so isMaximizingPlayer remains the same. Depth decreases.
+              let bestMultiJumpEval = isMaximizingPlayer ? -Infinity : Infinity;
+              for (const nextJump of possibleMoves) {
+                const {
+                  board: boardAfterNextJump,
+                  rCount: rCountAfterNextJump,
+                  bCount: bCountAfterNextJump,
+                } = simulateMoveOnBoard(
+                  simBoard,
+                  nextJump,
+                  simRedCount,
+                  simBlackCount
+                );
+                const evalScore = minimax(
+                  boardAfterNextJump,
+                  depth - 1,
+                  alpha,
+                  beta,
+                  isMaximizingPlayer,
+                  rCountAfterNextJump,
+                  bCountAfterNextJump,
+                  nextJump
+                ); // Pass nextJump for further multi-jumps
+                if (isMaximizingPlayer) {
+                  bestMultiJumpEval = Math.max(bestMultiJumpEval, evalScore);
+                  alpha = Math.max(alpha, bestMultiJumpEval);
+                } else {
+                  bestMultiJumpEval = Math.min(bestMultiJumpEval, evalScore);
+                  beta = Math.min(beta, bestMultiJumpEval);
+                }
+                if (beta <= alpha) break; // Pruning
+              }
+              return bestMultiJumpEval;
+            }
+            // No further multi-jumps, fall through to normal turn evaluation (but depth is consumed)
+          }
+        }
+        // Regular turn or end of multi-jump sequence
+        possibleMoves = generateAllMovesForPlayer(
+          simBoard,
+          playerForMinimax,
+          simRedCount,
+          simBlackCount,
+          playerMustJumpCurrent
+        );
+
+        if (isMaximizingPlayer) {
+          // AI's turn (Black)
+          let maxEval = -Infinity;
+          for (const move of possibleMoves) {
+            const {
+              board: childBoard,
+              rCount: childRedCount,
+              bCount: childBlackCount,
+              pieceAtTo,
+            } = simulateMoveOnBoard(simBoard, move, simRedCount, simBlackCount);
+            let evalScore;
+            if (move.type === "jump") {
+              // Check for multi-jump potential for the AI after this jump
+              const { moves: furtherJumps } = getPossibleMovesForPiece(
+                childBoard,
+                move.row,
+                move.col,
+                pieceAtTo.isKing,
+                AI_PLAYER,
+                true
+              );
+              if (furtherJumps.some((m) => m.type === "jump")) {
+                // AI continues its turn (isMaximizingPlayer = true), depth doesn't decrease for player switch
+                evalScore = minimax(
+                  childBoard,
+                  depth,
+                  alpha,
+                  beta,
+                  true,
+                  childRedCount,
+                  childBlackCount,
+                  move
+                ); // Pass 'move' as initialMoveForMultiJump
+              } else {
+                evalScore = minimax(
+                  childBoard,
+                  depth - 1,
+                  alpha,
+                  beta,
+                  false,
+                  childRedCount,
+                  childBlackCount
+                ); // Opponent's turn
+              }
+            } else {
+              evalScore = minimax(
+                childBoard,
+                depth - 1,
+                alpha,
+                beta,
+                false,
+                childRedCount,
+                childBlackCount
+              ); // Opponent's turn
+            }
+            maxEval = Math.max(maxEval, evalScore);
+            alpha = Math.max(alpha, evalScore);
+            if (beta <= alpha) break;
+          }
+          return maxEval;
+        } else {
+          // Human's turn (Red)
+          let minEval = Infinity;
+          for (const move of possibleMoves) {
+            const {
+              board: childBoard,
+              rCount: childRedCount,
+              bCount: childBlackCount,
+              pieceAtTo,
+            } = simulateMoveOnBoard(simBoard, move, simRedCount, simBlackCount);
+            let evalScore;
+
+            if (move.type === "jump") {
+              const { moves: furtherJumps } = getPossibleMovesForPiece(
+                childBoard,
+                move.row,
+                move.col,
+                pieceAtTo.isKing,
+                HUMAN_PLAYER,
+                true
+              );
+              if (furtherJumps.some((m) => m.type === "jump")) {
+                evalScore = minimax(
+                  childBoard,
+                  depth,
+                  alpha,
+                  beta,
+                  false,
+                  childRedCount,
+                  childBlackCount,
+                  move
+                );
+              } else {
+                evalScore = minimax(
+                  childBoard,
+                  depth - 1,
+                  alpha,
+                  beta,
+                  true,
+                  childRedCount,
+                  childBlackCount
+                );
+              }
+            } else {
+              evalScore = minimax(
+                childBoard,
+                depth - 1,
+                alpha,
+                beta,
+                true,
+                childRedCount,
+                childBlackCount
+              );
+            }
+            minEval = Math.min(minEval, evalScore);
+            beta = Math.min(beta, evalScore);
+            if (beta <= alpha) break;
+          }
+          return minEval;
+        }
+      }
+
+      function aiOrchestrateMove() {
+        const { isMandatory: aiMustJumpNow } = checkMandatoryJumpsForPlayer(
+          boardState,
+          AI_PLAYER,
+          redPiecesCount,
+          blackPiecesCount
+        );
+        // Ensure global `mustJump` reflects AI's current mandatory jump status for its turn.
+        // This is important if a human multi-jump ended and it became AI's turn.
+        mustJump = aiMustJumpNow;
+
+        const allPossibleAIMoves = generateAllMovesForPlayer(
+          boardState,
+          AI_PLAYER,
+          redPiecesCount,
+          blackPiecesCount,
+          mustJump
+        );
+
+        if (allPossibleAIMoves.length === 0) {
+          endTurnSequence();
+          return;
+        }
+
+        let bestMove = null;
+        let bestValue = -Infinity;
+        let candidateMoves = [];
+
+        for (const move of allPossibleAIMoves) {
+          const {
+            board: boardAfterMove,
+            rCount: rCountAfterMove,
+            bCount: bCountAfterMove,
+            pieceAtTo,
+          } = simulateMoveOnBoard(
+            boardState,
+            move,
+            redPiecesCount,
+            blackPiecesCount
+          );
+          let moveValue;
+
+          if (move.type === "jump") {
+            const { moves: furtherJumps } = getPossibleMovesForPiece(
+              boardAfterMove,
+              move.row,
+              move.col,
+              pieceAtTo.isKing,
+              AI_PLAYER,
+              true
+            );
+            if (furtherJumps.some((m) => m.type === "jump")) {
+              // AI continues its turn (isMaximizingPlayer = true), depth doesn't decrease for player switch yet
+              moveValue = minimax(
+                boardAfterMove,
+                currentAIDepth,
+                -Infinity,
+                Infinity,
+                true,
+                rCountAfterMove,
+                bCountAfterMove,
+                move
+              );
+            } else {
+              // End of AI's jump sequence, next is opponent's turn
+              moveValue = minimax(
+                boardAfterMove,
+                currentAIDepth - 1,
+                -Infinity,
+                Infinity,
+                false,
+                rCountAfterMove,
+                bCountAfterMove
+              );
+            }
+          } else {
+            // Regular move, next is opponent's turn
+            moveValue = minimax(
+              boardAfterMove,
+              currentAIDepth - 1,
+              -Infinity,
+              Infinity,
+              false,
+              rCountAfterMove,
+              bCountAfterMove
+            );
+          }
+
+          if (moveValue > bestValue) {
+            bestValue = moveValue;
+            candidateMoves = [move];
+          } else if (moveValue === bestValue) {
+            candidateMoves.push(move);
+          }
+        }
+
+        if (candidateMoves.length > 0) {
+          bestMove =
+            candidateMoves[Math.floor(Math.random() * candidateMoves.length)];
+        } else {
+          bestMove =
+            allPossibleAIMoves[
+              Math.floor(Math.random() * allPossibleAIMoves.length)
+            ];
+        }
+
+        const pieceElement =
+          boardState[bestMove.fromRow][bestMove.fromCol].element;
+        // Execute the chosen best move on the actual game board
+        // The executeMove function will update global redPiecesCount and blackPiecesCount
+        executeMove(
+          pieceElement,
+          bestMove.fromRow,
+          bestMove.fromCol,
+          bestMove.row,
+          bestMove.col,
+          bestMove.type === "jump",
+          bestMove.jumpedRow,
+          bestMove.jumpedCol,
+          false,
+          boardState,
+          redPiecesCount,
+          blackPiecesCount
+        );
+
+        if (bestMove.type === "jump") {
+          const aiPieceAfterJump = boardState[bestMove.row][bestMove.col]; // Get the piece from the *actual* board
+          const { moves: furtherJumps } = getPossibleMovesForPiece(
+            boardState,
+            bestMove.row,
+            bestMove.col,
+            aiPieceAfterJump.isKing,
+            AI_PLAYER,
+            true
+          );
+          if (furtherJumps.some((m) => m.type === "jump")) {
+            mustJump = true;
+            updateTurnMessage();
+            setTimeout(() => aiOrchestrateMove(), 500);
+            return;
+          }
+        }
+        endTurnSequence();
+      }
+
+      // --- Utility Functions ---
+      function getSquareElement(row, col) {
+        return boardElement.querySelector(
+          `.square[data-row='${row}'][data-col='${col}']`
+        );
+      }
+
+      function updateMessage(msg, isGameOver = false) {
+        messageBar.textContent = msg;
+        if (isGameOver) {
+          if (selectedPiece) deselectPiece();
+          boardElement.style.pointerEvents = "auto";
+        }
+      }
+
+      function capitalize(str) {
+        return str.charAt(0).toUpperCase() + str.slice(1);
+      }
+
+      // --- Event Listeners ---
+      resetButton.addEventListener("click", initializeBoard);
+
+      function handleOptionChange() {
+        playWithAI = aiToggle.checked;
+        currentAIDepth = parseInt(aiDifficultySelect.value);
+        if (
+          messageBar.textContent.includes("Turn") ||
+          messageBar.textContent.includes("thinking")
+        ) {
+          updateMessage("Reset game for settings change to take effect.");
+        }
+      }
+      aiToggle.addEventListener("change", handleOptionChange);
+      aiDifficultySelect.addEventListener("change", handleOptionChange);
+
+      // --- Start Game ---
+      initializeBoard();
+    </script>
+  </body>
+</html>
